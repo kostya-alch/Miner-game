@@ -5,15 +5,16 @@ using System.Windows.Forms;
 namespace Miner_game
 {
     public partial class Form1 : Form
-    {/// <summary>
-     /// Ширина столбца поля.
-     /// </summary>
-        private int width = 10;
+    {
+        /// <summary>
+        /// Ширина столбца поля.
+        /// </summary>
+        private int _width = 10;
 
         /// <summary>
         /// Высота столбца поля.
         /// </summary>
-        private int height = 10;
+        private int _height = 10;
 
         /// <summary>
         /// Расстояние между каждой кнопкой.
@@ -31,12 +32,7 @@ namespace Miner_game
             InitializeComponent();
         }
 
-        private void Form1_Load(object sender, EventArgs e)
-        {
-
-        }
-
-        void FieldClick(object sender, EventArgs e)
+        private void FieldClick(object sender, EventArgs e)
         {
             ButtonExented button = (ButtonExented)sender;
             // если бомба - вызов функции взрыва, если нет - игра продолжается.
@@ -44,11 +40,11 @@ namespace Miner_game
             else EmptyField(button);
         }
 
-        void Explode(ButtonExented button) // логика проигрыша если нарвался на бомбу
+        private void Explode(ButtonExented button) // логика проигрыша если нарвался на бомбу
         {
-            for (int x = 0; x < width; x++) // два цикла заполняют показывают где находятся мины после проигрыша
+            for (int x = 0; x < _width; x++) // два цикла заполняют показывают где находятся мины после проигрыша
             {
-                for (int y = 0; y < width; y++)
+                for (int y = 0; y < _width; y++)
                 {
                     if (_buttons[x, y].IsBomb) // проверка на бомбу
                     {
@@ -60,11 +56,11 @@ namespace Miner_game
         }
 
 
-        void EmptyField(ButtonExented button) // логика если в клетке нету бомбы и игра продолжается
+        private void EmptyField(ButtonExented button) // логика если в клетке нету бомбы и игра продолжается
         {
-            for (int x = 0; x < width; x++)
+            for (int x = 0; x < _width; x++)
             {
-                for (int y = 0; y < width; y++)
+                for (int y = 0; y < _width; y++)
                 {
                     if (_buttons[x, y] == button)
                     {
@@ -74,7 +70,7 @@ namespace Miner_game
             }
         }
 
-        int CountBombAround(int xB, int yB)
+        private int CountBombAround(int xB, int yB)
         // вспомогательная функция подсчета числа бомб размером 3х3 вокруг кнопки
         {
             int countBombs = 0; // счетчик бомб
@@ -82,7 +78,7 @@ namespace Miner_game
             {
                 for (int y = yB - 1; y <= yB + 1; y++)
                 {
-                    if (x >= 0 && x < width && y >= 0 && y < height)
+                    if (x >= 0 && x < _width && y >= 0 && y < _height)
                     {
                         if (_buttons[x, y].IsBomb)
                         {
@@ -94,14 +90,14 @@ namespace Miner_game
             return countBombs;
         }
 
-        void GenerateField()
+        private void GenerateField()
         {
-            _buttons = new ButtonExented[width, height]; // экземпляр класса
+            _buttons = new ButtonExented[_width, _height]; // экземпляр класса
             Random rng = new Random(); // генерируем рандомные значения на полях
 
-            for (int x = 10; (x - 10) < width * _distanceBetweenButtons; x += _distanceBetweenButtons) // цикл создания кнопок
+            for (int x = 10; (x - 10) < _width * _distanceBetweenButtons; x += _distanceBetweenButtons) // цикл создания кнопок
             {
-                for (int y = 20; (y - 20) < height * _distanceBetweenButtons; y += _distanceBetweenButtons)
+                for (int y = 20; (y - 20) < _height * _distanceBetweenButtons; y += _distanceBetweenButtons)
                 // цикл в котором мы заполняем игровое поле с рандомно взятыми значениями
                 {
                     ButtonExented button = new ButtonExented(); // создание кнопки в форме.
@@ -115,29 +111,29 @@ namespace Miner_game
 
                     _buttons[(x - 10) / _distanceBetweenButtons, (y - 20) / _distanceBetweenButtons] = button; // рассчитываем дистанцию
                     Controls.Add(button); // добавляем кнопки
-                    button.Click += new EventHandler(FieldClick); // вешаем обработчик клика
+                    button.Click += FieldClick; // вешаем обработчик клика
                 }
             }
         }
 
         private void х10ToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            width = 10;
-            height = 10;
+            _width = 10;
+            _height = 10;
             GenerateField();
         }
 
         private void х5ToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            width = 5;
-            height = 5;
+            _width = 5;
+            _height = 5;
             GenerateField();
         }
 
         private void х5ToolStripMenuItem1_Click(object sender, EventArgs e)
         {
-            width = 1;
-            height = 5;
+            _width = 1;
+            _height = 5;
             GenerateField();
         }
     }
@@ -145,7 +141,7 @@ namespace Miner_game
     /// <summary>
     /// Наследуемый класс, добавляющий к кнопке поле бомбы.
     /// </summary>
-    class ButtonExented : Button // наследуемый класс, добавляющий к кнопке поле бомбы.
+    public class ButtonExented : Button // наследуемый класс, добавляющий к кнопке поле бомбы.
     {
         public bool IsBomb { get; set; }
     }
