@@ -24,17 +24,18 @@ namespace Miner_game
         private void Form1_Load(object sender, EventArgs e)
         {
             allButtons = new ButtonExented[width, height]; // экземпляр класса
-            Random rng = new Random();
+            Random rng = new Random(); // генерируем рандомные значения на полях
             for(int x = 10; (x - 10) < width * distanceButtons; x+= distanceButtons) // цикл создания кнопок
             {
-                for (int y = 10; (y - 10) < height * distanceButtons; y+= distanceButtons)
+                for (int y = 10; (y - 10) < height * distanceButtons; y+= distanceButtons) 
+                    // цикл в котором мы заполняем игровое поле с рандомно взятыми значениями
                 {
                     ButtonExented button = new ButtonExented(); // создание кнопки в форме.
                     button.Location = new Point(x, y); // присваиваем локацию кнопке
                     button.Size = new Size(30, 30); // размер кнопки
-                    if (rng.Next(0, 101) < 20) // проверка на то, есть ли в кнопке бомба
+                    if (rng.Next(0, 101) < 20) // рандомно присваиваем кнопке бомбу
                     {
-                        button.isBomb = true;
+                        button.isBomb = true; 
                     }
                     allButtons[(x - 10) / distanceButtons, (y - 10) / distanceButtons] = button; 
                     Controls.Add(button);
@@ -57,8 +58,17 @@ namespace Miner_game
         }
         void Explode(ButtonExented button) // логика проигрыша если нарвался на бомбу
         {
+            for (int x = 0; x < width; x++) // два цикла заполняют показывают где находятся мины после проигрыша
+            {
+                for (int y = 0; y < width; y++)
+                {
+                    if (allButtons[x, y].isBomb)
+                    {
+                        allButtons[x, y].Text = "*";
+                    }
+                }
+            }
             MessageBox.Show("Вы проиграли");
-            button.Text = "*";
         }
 
         void EmptyField(ButtonExented button) // логика если в клетке нету бомбы и игра продолжается
