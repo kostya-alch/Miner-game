@@ -28,6 +28,11 @@ namespace Miner_game
 
 
         /// <summary>
+        /// Переменная проверяет первый клик в начале игры, чтобы не нарваться на бомбу.
+        /// </summary>
+        private bool _isFirstClick = true;
+
+        /// <summary>
         /// Массив кнопок.
         /// </summary>
         private ButtonExtented[,] _buttons;
@@ -75,8 +80,26 @@ namespace Miner_game
             // если бомба - вызов функции взрыва, если нет - игра продолжается.
             if (e.Button == MouseButtons.Left && clickedButton.IsClickable)
             {
-                if (clickedButton.IsBomb) Explode();
-                else EmptyFieldButtonClick(clickedButton);
+                if (clickedButton.IsBomb)
+                {
+                    if (_isFirstClick)
+                    {
+                        clickedButton.IsBomb = false;
+                        _isFirstClick = false;
+                        EmptyFieldButtonClick(clickedButton);
+                        // открытие соседней клетки
+                    }
+                    else
+                    {
+                        Explode();
+                    }
+
+                }
+                else
+                {
+                    EmptyFieldButtonClick(clickedButton);
+                }
+                _isFirstClick = false;
             }
             if (e.Button == MouseButtons.Right)
             {
