@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
 
+// Компьютерная игра Miner/Сапёр. 
 namespace Miner_game
 {
     public partial class Form1 : Form
@@ -24,7 +26,7 @@ namespace Miner_game
         /// <summary>
         /// Процент бомб на карте.
         /// </summary>
-        private readonly int _bombPercent = 30;
+        private readonly int _bombPercent = 15;
 
 
         /// <summary>
@@ -67,6 +69,8 @@ namespace Miner_game
                         button.IsBomb = true;
                     }
 
+                    button.xCoord = x;
+                    button.yCoord = y;
                     Controls.Add(button); // добавляем кнопки
                     button.MouseUp += new MouseEventHandler(FieldClick); // вешаем обработчик клика
                     _buttons[x, y] = button;
@@ -86,8 +90,8 @@ namespace Miner_game
                     {
                         clickedButton.IsBomb = false;
                         _isFirstClick = false;
-                        EmptyFieldButtonClick(clickedButton);
-                        // открытие соседней клетки
+                        //EmptyFieldButtonClick(clickedButton);
+                        BombOpenRegion(clickedButton.xCoord, clickedButton.yCoord, clickedButton);
                     }
                     else // если не первый ход - то взрываемся
                     {
@@ -124,17 +128,55 @@ namespace Miner_game
 
         private void EmptyFieldButtonClick(ButtonExtented clickedButton) // логика если в клетке нету бомбы и игра продолжается
         {
-            int bombsAround = 0;
+
             for (int y = 0; y < _height; y++)
             {
                 for (int x = 0; x < _width; x++)
                 {
                     if (_buttons[x, y] == clickedButton)
                     {
-                        bombsAround = CountBombAround(x, y);
+                        // bombsAround = CountBombAround(x, y);
+                        BombOpenRegion(x, y, clickedButton);
                     }
                 }
             }
+
+        }
+
+        private void BombOpenRegion(int xCoord, int yCoord, ButtonExtented clickedButton) // метод для открытия соседний полей при клике
+        {
+            Queue<ButtonExtented> queue = new Queue<ButtonExtented>(); // создали очередь
+            queue.Enqueue(clickedButton); // добавили в очередь кнопку
+
+            while (queue.Count > 0)
+            {
+                ButtonExtented currentCell = queue.Dequeue(); // получаем первый элемент в очереди
+                OpenCell(currentCell.xCoord, currentCell.yCoord, currentCell);
+
+                if (CountBombAround(currentCell.xCoord, currentCell.yCoord) == 0)
+                {
+                    for (int y = currentCell.yCoord - 1; y <= currentCell.yCoord + 1; y++)// проход по полю 3х3 в рамках нажатой кнопки
+                    {
+                        for (int x = currentCell.xCoord - 1; x <= currentCell.xCoord + 1; x++)
+                        {
+                            if (x >= 0 && x < _width && y < _height && y >= 0)
+                            {
+                                if (!_buttons[x, y].WasAdded) // проверка если кнопка не была добавлена в очередь
+                                {
+                                    queue.Enqueue(_buttons[x, y]);
+                                    _buttons[x, y].WasAdded = true;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        private void OpenCell(int x, int y, ButtonExtented clickedButton)
+        {
+            int bombsAround = CountBombAround(x, y);
+
             if (bombsAround == 0)
             {
 
@@ -172,7 +214,10 @@ namespace Miner_game
     /// </summary>
     public class ButtonExtented : Button // наследуемый класс, добавляющий к кнопке поле бомбы.
     {
-        public bool IsBomb { get; set; } // поле, хранит инфу о том, бомба ли эта клетка или нет
-        public bool IsClickable { get; set; } // поле, хранит инфу можно ли нажать на неё или нет
+        public bool IsBomb { get; set; } // хранит инфу о том, бомба ли эта клетка или нет
+        public bool IsClickable { get; set; } // хранит инфу можно ли нажать на кпопку или нет
+        public bool WasAdded { get; set; } // хранит инфу о том была ли добавлена кнопка в очередь
+        public int xCoord { get; set; } // позиция x клетки в двумерном массиве
+        public int yCoord { get; set; }// позиция y клетки в двумерном массиве
     }
 }
