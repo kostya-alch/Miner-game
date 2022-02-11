@@ -19,55 +19,110 @@ namespace Miner_game
         /// <summary>
         /// Расстояние между каждой кнопкой.
         /// </summary>
-        private readonly int _distanceBetweenButtons = 35;
+        private readonly int _offset = 30;
+
+        /// <summary>
+        /// Процент бомб на карте.
+        /// </summary>
+        private readonly int _bombPercent = 30;
 
 
         /// <summary>
         /// Массив кнопок.
         /// </summary>
-        private ButtonExented[,] _buttons;
+        private ButtonExtented[,] _buttons;
 
         public Form1()
         {
             InitializeComponent();
         }
 
-        private void FieldClick(object sender, EventArgs e)
+        private void Form1_Load_1(object sender, EventArgs e)
         {
-            ButtonExented button = (ButtonExented)sender;
-            // если бомба - вызов функции взрыва, если нет - игра продолжается.
-            if (button.IsBomb) Explode(button);
-            else EmptyField(button);
+            _buttons = new ButtonExtented[_width, _height];
+            GenerateField();
         }
 
-        private void Explode(ButtonExented button) // логика проигрыша если нарвался на бомбу
+        private void GenerateField()
         {
-            for (int x = 0; x < _width; x++) // два цикла заполняют показывают где находятся мины после проигрыша
+            Random random = new Random(); // генерируем рандомные значения на полях
+
+            for (int y = 0; y < _height; y++) // цикл создания кнопок
             {
-                for (int y = 0; y < _width; y++)
+                for (int x = 0; x < _width; x++)
+                // цикл в котором мы заполняем игровое поле с рандомно взятыми значениями
                 {
-                    if (_buttons[x, y].IsBomb) // проверка на бомбу
+                    ButtonExtented button = new ButtonExtented(); // создание кнопки в форме.
+                    button.Location = new Point(x * _offset, y * _offset); // присваиваем локацию кнопке
+                    button.Size = new Size(_offset, _offset); // размер кнопки
+                    button.IsClickable = true; // устанавливаем флаг true
+
+                    if (random.Next(0, 100) <= _bombPercent) // рандомно присваиваем кнопке бомбу
                     {
-                        _buttons[x, y].Text = "*"; // рисуем сами бомбочки по условию isBomb
+                        button.IsBomb = true;
                     }
+
+                    Controls.Add(button); // добавляем кнопки
+                    button.MouseUp += new MouseEventHandler(FieldClick); // вешаем обработчик клика
+                    _buttons[x, y] = button;
+                }
+            }
+        }
+
+        private void FieldClick(object sender, MouseEventArgs e)
+        {
+            ButtonExtented clickedButton = (ButtonExtented)sender;
+            // если бомба - вызов функции взрыва, если нет - игра продолжается.
+            if (e.Button == MouseButtons.Left && clickedButton.IsClickable)
+            {
+                if (clickedButton.IsBomb) Explode();
+                else EmptyFieldButtonClick(clickedButton);
+            }
+            if (e.Button == MouseButtons.Right)
+            {
+                clickedButton.IsClickable = !clickedButton.IsClickable; // переключение активности кнопки с помощью отрицания
+                if (!clickedButton.IsClickable) clickedButton.Text = "B";
+                else clickedButton.Text = "";
+            }
+        }
+
+        private void Explode() // логика проигрыша если нарвался на бомбу
+        {
+            foreach (ButtonExtented button in _buttons)
+            // пробегаемся циклом по всем кнопкам, чтобы нарисовать бомбы
+            {
+                if (button.IsBomb)
+                {
+                    button.Text = "*";
                 }
             }
             MessageBox.Show("Вы проиграли");
+            Application.Restart();
         }
 
 
-        private void EmptyField(ButtonExented button) // логика если в клетке нету бомбы и игра продолжается
+        private void EmptyFieldButtonClick(ButtonExtented clickedButton) // логика если в клетке нету бомбы и игра продолжается
         {
-            for (int x = 0; x < _width; x++)
+            int bombsAround = 0;
+            for (int y = 0; y < _height; y++)
             {
-                for (int y = 0; y < _width; y++)
+                for (int x = 0; x < _width; x++)
                 {
-                    if (_buttons[x, y] == button)
+                    if (_buttons[x, y] == clickedButton)
                     {
-                        button.Text = "" + CountBombAround(x, y); // отображение в клетке числа бомб вокруг.
+                        bombsAround = CountBombAround(x, y);
                     }
                 }
             }
+            if (bombsAround == 0)
+            {
+
+            }
+            else
+            {
+                clickedButton.Text = "" + bombsAround;
+            }
+            clickedButton.Enabled = false;
         }
 
         private int CountBombAround(int xB, int yB)
@@ -89,60 +144,14 @@ namespace Miner_game
             }
             return countBombs;
         }
-
-        private void GenerateField()
-        {
-            _buttons = new ButtonExented[_width, _height]; // экземпляр класса
-            Random rng = new Random(); // генерируем рандомные значения на полях
-
-            for (int x = 10; (x - 10) < _width * _distanceBetweenButtons; x += _distanceBetweenButtons) // цикл создания кнопок
-            {
-                for (int y = 20; (y - 20) < _height * _distanceBetweenButtons; y += _distanceBetweenButtons)
-                // цикл в котором мы заполняем игровое поле с рандомно взятыми значениями
-                {
-                    ButtonExented button = new ButtonExented(); // создание кнопки в форме.
-                    button.Location = new Point(x, y); // присваиваем локацию кнопке
-                    button.Size = new Size(30, 30); // размер кнопки
-
-                    if (rng.Next(0, 101) < 20) // рандомно присваиваем кнопке бомбу
-                    {
-                        button.IsBomb = true;
-                    }
-
-                    _buttons[(x - 10) / _distanceBetweenButtons, (y - 20) / _distanceBetweenButtons] = button; // рассчитываем дистанцию
-                    Controls.Add(button); // добавляем кнопки
-                    button.Click += FieldClick; // вешаем обработчик клика
-                }
-            }
-        }
-
-        private void х10ToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            _width = 10;
-            _height = 10;
-            GenerateField();
-        }
-
-        private void х5ToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            _width = 5;
-            _height = 5;
-            GenerateField();
-        }
-
-        private void х5ToolStripMenuItem1_Click(object sender, EventArgs e)
-        {
-            _width = 1;
-            _height = 5;
-            GenerateField();
-        }
     }
 
     /// <summary>
     /// Наследуемый класс, добавляющий к кнопке поле бомбы.
     /// </summary>
-    public class ButtonExented : Button // наследуемый класс, добавляющий к кнопке поле бомбы.
+    public class ButtonExtented : Button // наследуемый класс, добавляющий к кнопке поле бомбы.
     {
-        public bool IsBomb { get; set; }
+        public bool IsBomb { get; set; } // поле, хранит инфу о том, бомба ли эта клетка или нет
+        public bool IsClickable { get; set; } // поле, хранит инфу можно ли нажать на неё или нет
     }
 }
