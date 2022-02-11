@@ -78,33 +78,32 @@ namespace Miner_game
         {
             ButtonExtented clickedButton = (ButtonExtented)sender;
             // если бомба - вызов функции взрыва, если нет - игра продолжается.
-            if (e.Button == MouseButtons.Left && clickedButton.IsClickable)
+            if (e.Button == MouseButtons.Left && clickedButton.IsClickable) // если левая кнопка кликнута 
             {
                 if (clickedButton.IsBomb)
                 {
-                    if (_isFirstClick)
+                    if (_isFirstClick) // проверка, чтобы не проиграть на первом ходу
                     {
                         clickedButton.IsBomb = false;
                         _isFirstClick = false;
                         EmptyFieldButtonClick(clickedButton);
                         // открытие соседней клетки
                     }
-                    else
+                    else // если не первый ход - то взрываемся
                     {
                         Explode();
                     }
-
                 }
-                else
+                else // если клетка реально пустая - идем даже
                 {
                     EmptyFieldButtonClick(clickedButton);
                 }
-                _isFirstClick = false;
+                _isFirstClick = false; // после первого хода флаг становится ложным в любом случае
             }
-            if (e.Button == MouseButtons.Right)
+            if (e.Button == MouseButtons.Right) // нажатие правой кнопки мыши
             {
                 clickedButton.IsClickable = !clickedButton.IsClickable; // переключение активности кнопки с помощью отрицания
-                if (!clickedButton.IsClickable) clickedButton.Text = "B";
+                if (!clickedButton.IsClickable) clickedButton.Text = "B"; // отображение флага бомбы на поле 
                 else clickedButton.Text = "";
             }
         }
@@ -112,11 +111,10 @@ namespace Miner_game
         private void Explode() // логика проигрыша если нарвался на бомбу
         {
             foreach (ButtonExtented button in _buttons)
-            // пробегаемся циклом по всем кнопкам, чтобы нарисовать бомбы
             {
                 if (button.IsBomb)
                 {
-                    button.Text = "*";
+                    button.Text = "*";  // пробегаемся циклом по всем кнопкам, чтобы нарисовать бомбы
                 }
             }
             MessageBox.Show("Вы проиграли");
