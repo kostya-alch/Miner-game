@@ -30,9 +30,19 @@ namespace Miner_game
 
 
         /// <summary>
-        /// Переменная проверяет первый клик в начале игры, чтобы не нарваться на бомбу.
+        ///  Проверяет первый клик в начале игры, чтобы не нарваться на бомбу.
         /// </summary>
         private bool _isFirstClick = true;
+
+        /// <summary>
+        /// Считает число открытых клеток для выигрыша
+        /// </summary>
+        private int _cellsOpened = 0;
+
+        /// <summary>
+        /// Считает число бомб на карте
+        /// </summary>
+        private int _bombs = 0;
 
         /// <summary>
         /// Массив кнопок.
@@ -46,11 +56,11 @@ namespace Miner_game
 
         private void Form1_Load_1(object sender, EventArgs e)
         {
-            _buttons = new ButtonExtented[_width, _height];
-            GenerateField();
+            _buttons = new ButtonExtented[_width, _height]; // экземпляр класса для начала работы
+            GenerateField(); // вызов метода генерации полей
         }
 
-        private void GenerateField()
+        private void GenerateField() // метод для генерации игрового поля
         {
             Random random = new Random(); // генерируем рандомные значения на полях
 
@@ -66,10 +76,11 @@ namespace Miner_game
 
                     if (random.Next(0, 100) <= _bombPercent) // рандомно присваиваем кнопке бомбу
                     {
-                        button.IsBomb = true;
+                        button.IsBomb = true; // меняем флаг бомбы на true
+                        _bombs++; // инкрементируем кол-во бомб, чтобы дойти до выигрыша
                     }
 
-                    button.xCoord = x;
+                    button.xCoord = x; // присвоение координат
                     button.yCoord = y;
                     Controls.Add(button); // добавляем кнопки
                     button.MouseUp += new MouseEventHandler(FieldClick); // вешаем обработчик клика
@@ -80,17 +91,17 @@ namespace Miner_game
 
         private void FieldClick(object sender, MouseEventArgs e)
         {
-            ButtonExtented clickedButton = (ButtonExtented)sender;
+            ButtonExtented clickedButton = (ButtonExtented)sender; // цепляем событие клика
             // если бомба - вызов функции взрыва, если нет - игра продолжается.
             if (e.Button == MouseButtons.Left && clickedButton.IsClickable) // если левая кнопка кликнута 
             {
-                if (clickedButton.IsBomb)
+                if (clickedButton.IsBomb) // проверка на бомбу
                 {
-                    if (_isFirstClick) // проверка, чтобы не проиграть на первом ходу
+                    if (_isFirstClick) // проверка, чтобы не проиграть на первом ходу и не взорваться
                     {
-                        clickedButton.IsBomb = false;
+                        clickedButton.IsBomb = false; // если всё-таки на первом ходу бомба - меняем клетку на обычную
                         _isFirstClick = false;
-                        //EmptyFieldButtonClick(clickedButton);
+                        _bombs--; // декрементируем счетчик
                         BombOpenRegion(clickedButton.xCoord, clickedButton.yCoord, clickedButton);
                     }
                     else // если не первый ход - то взрываемся
@@ -102,7 +113,7 @@ namespace Miner_game
                 {
                     EmptyFieldButtonClick(clickedButton);
                 }
-                _isFirstClick = false; // после первого хода флаг становится ложным в любом случае
+                _isFirstClick = false; // после первого хода флаг становится ложным в любом случае, надо играть дальше
             }
             if (e.Button == MouseButtons.Right) // нажатие правой кнопки мыши
             {
@@ -110,6 +121,7 @@ namespace Miner_game
                 if (!clickedButton.IsClickable) clickedButton.Text = "B"; // отображение флага бомбы на поле 
                 else clickedButton.Text = "";
             }
+            CheckWin(); // если прошли все условия - игра выиграна. 
         }
 
         private void Explode() // логика проигрыша если нарвался на бомбу
@@ -122,36 +134,38 @@ namespace Miner_game
                 }
             }
             MessageBox.Show("Вы проиграли");
-            Application.Restart();
+            Application.Restart(); // рестарт приложения в случае проигрыша
         }
 
 
-        private void EmptyFieldButtonClick(ButtonExtented clickedButton) // логика если в клетке нету бомбы и игра продолжается
+        private void EmptyFieldButtonClick(ButtonExtented clickedButton)
+        // логика если в клетке нету бомбы и игра продолжается
         {
-
-            for (int y = 0; y < _height; y++)
+            for (int y = 0; y < _height; y++) // пробегаемся по всему полю двумя циклами
             {
                 for (int x = 0; x < _width; x++)
                 {
-                    if (_buttons[x, y] == clickedButton)
+                    if (_buttons[x, y] == clickedButton) // если клик соответствует 
                     {
-                        // bombsAround = CountBombAround(x, y);
-                        BombOpenRegion(x, y, clickedButton);
+                        BombOpenRegion(x, y, clickedButton); // тогда вызываем метод открытия соседних полей
                     }
                 }
             }
 
         }
 
-        private void BombOpenRegion(int xCoord, int yCoord, ButtonExtented clickedButton) // метод для открытия соседний полей при клике
+        private void BombOpenRegion(int xCoord, int yCoord, ButtonExtented clickedButton)
+        // метод для открытия соседний полей при клике
         {
             Queue<ButtonExtented> queue = new Queue<ButtonExtented>(); // создали очередь
             queue.Enqueue(clickedButton); // добавили в очередь кнопку
+            clickedButton.WasAdded = true; // добавляем флаг на кнопку
 
             while (queue.Count > 0)
             {
                 ButtonExtented currentCell = queue.Dequeue(); // получаем первый элемент в очереди
                 OpenCell(currentCell.xCoord, currentCell.yCoord, currentCell);
+                _cellsOpened++;
 
                 if (CountBombAround(currentCell.xCoord, currentCell.yCoord) == 0)
                 {
@@ -159,6 +173,10 @@ namespace Miner_game
                     {
                         for (int x = currentCell.xCoord - 1; x <= currentCell.xCoord + 1; x++)
                         {
+                            if (x == currentCell.xCoord && y == currentCell.yCoord)
+                            {
+                                continue; // исключаем нажатую клетку из списка очереди
+                            }
                             if (x >= 0 && x < _width && y < _height && y >= 0)
                             {
                                 if (!_buttons[x, y].WasAdded) // проверка если кнопка не была добавлена в очередь
@@ -194,18 +212,28 @@ namespace Miner_game
             int countBombs = 0; // счетчик бомб
             for (int x = xB - 1; x <= xB + 1; x++) // два цикла которые считают сами бомбы
             {
-                for (int y = yB - 1; y <= yB + 1; y++)
+                for (int y = yB - 1; y <= yB + 1; y++) // пробег двумя циклами по полю
                 {
                     if (x >= 0 && x < _width && y >= 0 && y < _height)
                     {
                         if (_buttons[x, y].IsBomb)
                         {
-                            countBombs++;
+                            countBombs++; // счетчик бомб тоже нужно считать!
                         }
                     }
                 }
             }
             return countBombs;
+        }
+
+        private void CheckWin() // метод для победы в игре
+        {
+            int cells = _width * _height; // считаем кол-во клеток
+            int emptyCells = cells - _bombs; // считаем кол-во пустых клеток
+            if (_cellsOpened >= emptyCells) // если все клетки открыты - вуаля!
+            {
+                MessageBox.Show("Вы победили! =)"); // здесь можно написать что угодно, но лучше хорошее.
+            }
         }
     }
 
